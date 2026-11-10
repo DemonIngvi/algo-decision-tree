@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Дерево выбора алгоритма</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1d1d1f;--muted:#5f6368;--card:#fff;--line:#cfcac0;--acc:#00758f;--ok:#1f7a3a;--okbg:#e9f6ec;--no:#b3261e;--warn:#a34a00;--warnbg:#fff4e8;--code:#f3f1ec;--grid:#efece6;
+--k:#7a3e9d;--s:#1f7a3a;--c:#8a8f98;--n:#b35c00;--f:#00758f;--t:#a34a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121316;--fg:#e8e6e3;--muted:#a0a4ab;--card:#1b1d21;--line:#3a3e46;--acc:#4fc3dc;--ok:#7ad28f;--okbg:#17271c;--no:#ff8a80;--warn:#ffb070;--warnbg:#2a2018;--code:#181a1e;--grid:#1a1c20;
+--k:#c792ea;--s:#a5d6a7;--c:#6f7680;--n:#ffb870;--f:#5fd0e6;--t:#ffcb6b}}
+:root[data-theme="dark"]{--bg:#121316;--fg:#e8e6e3;--muted:#a0a4ab;--card:#1b1d21;--line:#3a3e46;--acc:#4fc3dc;--ok:#7ad28f;--okbg:#17271c;--no:#ff8a80;--warn:#ffb070;--warnbg:#2a2018;--code:#181a1e;--grid:#1a1c20;
+--k:#c792ea;--s:#a5d6a7;--c:#6f7680;--n:#ffb870;--f:#5fd0e6;--t:#ffcb6b}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.app{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,440px);height:100vh}
+.left{position:relative;overflow:auto;border-right:1px solid var(--line);background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:18px 18px}
+.right{overflow-y:auto;padding:22px clamp(16px,3vw,32px) 40px;background:var(--card)}
+.bar{position:sticky;top:0;left:0;z-index:3;display:flex;gap:8px;align-items:center;padding:10px 14px;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(4px);border-bottom:1px solid var(--line)}
+.bar h1{font-size:1rem;margin:0;flex:1;white-space:nowrap}
+.bar .lg{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.bar .lg b.y{color:var(--ok)}.bar .lg b.n{color:var(--no)}
+.bar button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:7px;height:28px;min-width:30px;font:inherit;font-size:.82rem;cursor:pointer}
+.canvas{position:relative;margin:18px 20px 40px}
+svg.edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+svg.edges path{fill:none;stroke:var(--line);stroke-width:1.6}
+svg.edges path.on{stroke:var(--acc);stroke-width:2.6}
+svg.edges text{font:600 11px system-ui,sans-serif}
+svg.edges text.y{fill:var(--ok)}svg.edges text.n{fill:var(--no)}
+.nd{position:absolute;display:flex;align-items:center;border-radius:10px;padding:6px 10px;font-size:.84rem;line-height:1.25;cursor:pointer;user-select:none;transition:box-shadow .15s,border-color .15s}
+.nd.q{background:var(--card);border:1.5px solid var(--line);color:var(--fg)}
+.nd.q::before{content:"if";font:700 .72rem ui-monospace,Consolas,monospace;color:var(--acc);margin-right:7px;flex:none}
+.nd.l{background:var(--okbg);border:1.5px solid var(--ok);color:var(--ok);font-weight:650}
+.nd:hover{box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.nd.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.nd.l.sel{background:var(--ok);color:var(--bg)}
+.kick{color:var(--acc);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.74rem;margin-bottom:4px}
+.right h2{font-size:clamp(1.3rem,2.2vw,1.8rem);margin:0 0 10px;line-height:1.2}
+.path{font-size:.84rem;color:var(--muted);margin:0 0 12px}
+.path span{display:block}
+.path span::before{content:"└ ";color:var(--line)}
+.path b.y{color:var(--ok)}.path b.n{color:var(--no)}
+.cplx{display:inline-block;font-family:ui-monospace,Consolas,monospace;font-weight:700;background:var(--okbg);border:1px solid var(--ok);color:var(--ok);border-radius:8px;padding:2px 10px;margin:0 6px 6px 0;font-size:.88rem}
+.pill{display:inline-block;font-size:.8rem;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted);margin:0 6px 6px 0}
+.sec{margin:14px 0 0}
+.sec h3{margin:0 0 6px;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.sec p{margin:0}
+.when{border-left:4px solid var(--acc);background:var(--bg);border-radius:8px;padding:8px 12px}
+.trap{background:var(--warnbg);border-left:4px solid var(--warn);border-radius:8px;padding:8px 12px}
+pre.code{margin:0;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font:.8rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:4}
+pre.code code{font:inherit}
+.tk{color:var(--k);font-weight:600}.ts{color:var(--s)}.tc{color:var(--c);font-style:italic}.tn{color:var(--n)}.tf{color:var(--f)}.tt{color:var(--t)}.tfix{color:var(--warn);font-style:normal;font-weight:600}
+.src{color:var(--muted);font-size:.85rem}.src a{color:var(--acc)}
+.hint{color:var(--muted)}
+.br{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin-top:8px}
+.br b.y{color:var(--ok)}.br b.n{color:var(--no)}
+.br a{color:var(--fg);cursor:pointer;text-decoration:underline dotted}
+@media (max-width:860px){.app{grid-template-columns:1fr;grid-template-rows:60vh auto;height:auto}.left{height:60vh;border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="left" id="left">
+<div class="bar"><h1>Какой алгоритм выбрать</h1><span class="lg"><b class="y">да →</b> вправо · <b class="n">нет ↓</b> вниз</span><button id="theme" title="Тема">◐</button></div>
+<div class="canvas" id="canvas"><svg class="edges" id="edges"></svg></div>
+</div>
+<main class="right" id="panel"></main>
+</div>
+<script>
+(function(){
+var C={
+merge:`func merge(nums1 []int, m int, nums2 []int, n int) {
+    p1, p2, p := m-1, n-1, m+n-1
+    for p1 >= 0 && p2 >= 0 {
+        if nums1[p1] > nums2[p2] {
+            nums1[p] = nums1[p1]
+            p1--
+        } else {
+            nums1[p] = nums2[p2]
+            p2--
+        }
+        p--
+    }
+    for p2 >= 0 { // остаток nums2; nums1 уже на месте
+        nums1[p] = nums2[p2]
+        p2--
+        p--
+    }
+}`,
+pal:`func isPalindrome(s string) bool {
+    normalized := strings.ToLower(s)
+    left, right := 0, len(normalized)-1
+    for left < right {
+        if !isAlnum(normalized[left]) {
+            left++
+            continue
+        }
+        if !isAlnum(normalized[right]) {
+            right--
+            continue
+        }
+        if normalized[left] != normalized[right] {
+            return false
+        }
+        left++
+        right--
+    }
+    return true
+}
+
+func isAlnum(c byte) bool {
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
+}`,
+two:`func twoSum(nums []int, target int) []int {
+    lookup := make(map[int]int) // значение -> индекс
+    for idx, num := range nums {
+        if foundIdx, ok := lookup[target-num]; ok {
+            return []int{foundIdx, idx}
+        }
+        lookup[num] = idx // после проверки
+    }
+    return []int{-1, -1}
+}`,
+topk:`func topKFrequent(nums []int, k int) []int {
+    freq := make(map[int]int)
+    for _, num := range nums {
+        freq[num]++
+    }
+    buckets := make([][]int, len(nums)+1) // частота 1..len(nums)
+    for num, f := range freq {
+        buckets[f] = append(buckets[f], num)
+    }
+    result := make([]int, 0, k)
+    for i := len(buckets) - 1; i >= 0; i-- {
+        for _, num := range buckets[i] {
+            result = append(result, num)
+            if len(result) == k {
+                return result
+            }
+        }
+    }
+    return result
+}`,
+ml:`func mergeTwoLists(a, b *ListNode) *ListNode {
+    dummy := &ListNode{}
+    tail := dummy
+    for a != nil && b != nil {
+        if a.Val <= b.Val {
+            tail.Next, a = a, a.Next
+        } else {
+            tail.Next, b = b, b.Next
+        }
+        tail = tail.Next
+    }
+    if a != nil {
+        tail.Next = a
+    } else {
+        tail.Next = b
+    }
+    return dummy.Next
+}`,
+mat:`func searchMatrix(matrix [][]int, target int) bool {
+    if len(matrix) == 0 || len(matrix[0]) == 0 {
+        return false
+    }
+    cols := len(matrix[0])
+    lo, hi := 0, len(matrix)*cols-1
+    for lo <= hi {
+        mid := lo + (hi-lo)/2
+        v := matrix[mid/cols][mid%cols] // делим на СТОЛБЦЫ
+        switch {
+        case v == target:
+            return true
+        case v < target:
+            lo = mid + 1
+        default:
+            hi = mid - 1
+        }
+    }
+    return false
+}`,
+mk:`type nodeHeap []*ListNode
+
+func (h nodeHeap) Len() int           { return len(h) }
+func (h nodeHeap) Less(i, j int) bool { return h[i].Val < h[j].Val } // значения!
+func (h nodeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *nodeHeap) Push(x any)        { *h = append(*h, x.(*ListNode)) }
+func (h *nodeHeap) Pop() any {
+    old := *h
+    x := old[len(old)-1]
+    *h = old[:len(old)-1]
+    return x
+}
+
+func mergeKLists(lists []*ListNode) *ListNode {
+    h := &nodeHeap{}
+    for _, l := range lists {
+        if l != nil {
+            heap.Push(h, l)
+        }
+    }
+    dummy := &ListNode{}
+    tail := dummy
+    for h.Len() > 0 {
+        n := heap.Pop(h).(*ListNode)
+        tail.Next, tail = n, n
+        if n.Next != nil {
+            heap.Push(h, n.Next) // следующий из того же списка
+        }
+    }
+    return dummy.Next
+}`,
+rw:`type Shard struct {
+    mu   sync.RWMutex
+    data map[string]string
+}
+
+func (s *Shard) Set(k, v string) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    s.data[k] = v
+}
+
+func (s *Shard) Get(k string) (string, bool) {
+    s.mu.RLock()
+    defer s.mu.RUnlock()
+    v, ok := s.data[k]
+    return v, ok
+}`,
+shard:`type InMemoryCache struct{ shards []*Shard }
+
+func NewInMemoryCache(n int) *InMemoryCache {
+    shards := make([]*Shard, 0, n)
+    for i := 0; i < n; i++ {
+        shards = append(shards, &Shard{data: make(map[string]string)})
+    }
+    return &InMemoryCache{shards: shards}
+}
+
+func (c *InMemoryCache) shard(k string) *Shard {
+    h := fnv.New32a()
+    _, _ = h.Write([]byte(k))
+    return c.shards[h.Sum32()%uint32(len(c.shards))]
+}
+
+func (c *InMemoryCache) Set(k, v string)             { c.shard(k).Set(k, v) }
+func (c *InMemoryCache) Get(k string) (string, bool) { return c.shard(k).Get(k) }`,
+bg:`func (d *Data) run(ctx context.Context, interval time.Duration) {
+    d.UpdateTemperature(ctx) // [правка] заполнить сразу
+    t := time.NewTicker(interval)
+    defer t.Stop()
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case <-t.C:
+            d.UpdateTemperature(ctx)
+        }
+    }
+}
+
+func (d *Data) GetTemperature(city string) (int, bool) {
+    d.mu.RLock()
+    defer d.mu.RUnlock()
+    t, ok := d.Temperatures[city]
+    return t, ok
+}`,
+pool:`func (d *Data) UpdateTemperature(ctx context.Context) {
+    d.mu.RLock()
+    cities := make([]string, 0, len(d.Temperatures))
+    for c := range d.Temperatures { // [правка] копия ключей под RLock
+        cities = append(cities, c)
+    }
+    d.mu.RUnlock()
+
+    var wg sync.WaitGroup
+    sem := make(chan struct{}, 20) // [правка] лимит параллельности
+    for _, city := range cities {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            sem <- struct{}{}
+            defer func() { <-sem }()
+            t := WeatherForecast(ctx, city) // долго, без блокировки
+            d.mu.Lock()
+            d.Temperatures[city] = t
+            d.mu.Unlock()
+        }()
+    }
+    wg.Wait()
+}`
+};
+var EX={
+"context.Context":`// Воркер: отмена через ctx и таймаут на каждый внешний вызов
+func worker(ctx context.Context, jobs <-chan string, out chan<- int) {
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case city, ok := <-jobs:
+            if !ok {
+                return
+            }
+            reqCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+            t, err := fetchTemp(reqCtx, city)
+            cancel() // освободить таймер сразу, не через defer в цикле
+            if err != nil {
+                continue
+            }
+            select {
+            case out <- t:
+            case <-ctx.Done():
+                return
+            }
+        }
+    }
+}
+
+func fetchTemp(ctx context.Context, city string) (int, error) {
+    req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+        "http://weather/api?city="+url.QueryEscape(city), nil)
+    if err != nil {
+        return 0, err
+    }
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return 0, err // в том числе context.DeadlineExceeded
+    }
+    defer resp.Body.Close()
+    var v struct{ Temperature int }
+    err = json.NewDecoder(resp.Body).Decode(&v)
+    return v.Temperature, err
+}`,
+"Дейкстра":`// LC 743. Network Delay Time
+type item struct{ node, dist int }
+type minHeap []item
+
+func (h minHeap) Len() int           { return len(h) }
+func (h minHeap) Less(i, j int) bool { return h[i].dist < h[j].dist }
+func (h minHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *minHeap) Push(x any)        { *h = append(*h, x.(item)) }
+func (h *minHeap) Pop() any {
+    old := *h
+    x := old[len(old)-1]
+    *h = old[:len(old)-1]
+    return x
+}
+
+func networkDelayTime(times [][]int, n int, k int) int {
+    g := make([][][2]int, n+1) // g[u] = {v, вес}
+    for _, t := range times {
+        g[t[0]] = append(g[t[0]], [2]int{t[1], t[2]})
+    }
+    dist := make([]int, n+1)
+    for i := range dist {
+        dist[i] = math.MaxInt
+    }
+    dist[k] = 0
+    h := &minHeap{{k, 0}}
+    for h.Len() > 0 {
+        cur := heap.Pop(h).(item)
+        if cur.dist > dist[cur.node] {
+            continue // устаревшая запись
+        }
+        for _, e := range g[cur.node] {
+            if nd := cur.dist + e[1]; nd < dist[e[0]] {
+                dist[e[0]] = nd
+                heap.Push(h, item{e[0], nd})
+            }
+        }
+    }
+    ans := 0
+    for i := 1; i <= n; i++ {
+        if dist[i] == math.MaxInt {
+            return -1
+        }
+        ans = max(ans, dist[i])
+    }
+    return ans
+}`,
+"BFS":`// Кратчайшее число рёбер от start до target (граф без весов)
+func shortestPath(g [][]int, start, target int) int {
+    dist := make([]int, len(g))
+    for i := range dist {
+        dist[i] = -1
+    }
+    dist[start] = 0
+    queue := []int{start}
+    for len(queue) > 0 {
+        v := queue[0]
+        queue = queue[1:]
+        if v == target {
+            return dist[v]
+        }
+        for _, u := range g[v] {
+            if dist[u] == -1 { // помечаем при добавлении в очередь
+                dist[u] = dist[v] + 1
+                queue = append(queue, u)
+            }
+        }
+    }
+    return -1
+}`,
+"Топологическая сортировка":`// LC 207. Course Schedule (алгоритм Kahn)
+func canFinish(numCourses int, prerequisites [][]int) bool {
+    g := make([][]int, numCourses)
+    indeg := make([]int, numCourses)
+    for _, p := range prerequisites { // p = [курс, пререквизит]
+        g[p[1]] = append(g[p[1]], p[0])
+        indeg[p[0]]++
+    }
+    queue := []int{}
+    for i, d := range indeg {
+        if d == 0 {
+            queue = append(queue, i)
+        }
+    }
+    done := 0
+    for len(queue) > 0 {
+        v := queue[0]
+        queue = queue[1:]
+        done++
+        for _, u := range g[v] {
+            indeg[u]--
+            if indeg[u] == 0 {
+                queue = append(queue, u)
+            }
+        }
+    }
+    return done == numCourses // иначе в графе цикл
+}`,
+"Union-Find (DSU)":`// LC 684. Redundant Connection
+type DSU struct{ parent, rank []int }
+
+func NewDSU(n int) *DSU {
+    d := &DSU{make([]int, n), make([]int, n)}
+    for i := range d.parent {
+        d.parent[i] = i
+    }
+    return d
+}
+
+func (d *DSU) Find(x int) int {
+    if d.parent[x] != x {
+        d.parent[x] = d.Find(d.parent[x]) // сжатие путей
+    }
+    return d.parent[x]
+}
+
+func (d *DSU) Union(a, b int) bool {
+    ra, rb := d.Find(a), d.Find(b)
+    if ra == rb {
+        return false // уже в одной компоненте
+    }
+    if d.rank[ra] < d.rank[rb] {
+        ra, rb = rb, ra
+    }
+    d.parent[rb] = ra
+    if d.rank[ra] == d.rank[rb] {
+        d.rank[ra]++
+    }
+    return true
+}
+
+func findRedundantConnection(edges [][]int) []int {
+    d := NewDSU(len(edges) + 1)
+    for _, e := range edges {
+        if !d.Union(e[0], e[1]) {
+            return e
+        }
+    }
+    return nil
+}`,
+"BFS по уровням":`// LC 102. Binary Tree Level Order Traversal
+func levelOrder(root *TreeNode) [][]int {
+    var res [][]int
+    if root == nil {
+        return res
+    }
+    queue := []*TreeNode{root}
+    for len(queue) > 0 {
+        size := len(queue) // фиксируем размер уровня
+        level := make([]int, 0, size)
+        for i := 0; i < size; i++ {
+            n := queue[0]
+            queue = queue[1:]
+            level = append(level, n.Val)
+            if n.Left != nil {
+                queue = append(queue, n.Left)
+            }
+            if n.Right != nil {
+                queue = append(queue, n.Right)
+            }
+        }
+        res = append(res, level)
+    }
+    return res
+}`,
+"DFS":`// LC 98. Validate Binary Search Tree
+func isValidBST(root *TreeNode) bool {
+    var check func(n *TreeNode, lo, hi int) bool
+    check = func(n *TreeNode, lo, hi int) bool {
+        if n == nil {
+            return true
+        }
+        if n.Val <= lo || n.Val >= hi {
+            return false
+        }
+        // границы передаются вниз, а не только сравнение с детьми
+        return check(n.Left, lo, n.Val) && check(n.Right, n.Val, hi)
+    }
+    return check(root, math.MinInt, math.MaxInt)
+}
+
+// LC 104. Maximum Depth of Binary Tree
+func maxDepth(root *TreeNode) int {
+    if root == nil {
+        return 0
+    }
+    return 1 + max(maxDepth(root.Left), maxDepth(root.Right))
+}`,
+"Обход из угла":`// LC 240. Search a 2D Matrix II
+func searchMatrix(matrix [][]int, target int) bool {
+    if len(matrix) == 0 {
+        return false
+    }
+    r, c := 0, len(matrix[0])-1 // правый верхний угол
+    for r < len(matrix) && c >= 0 {
+        v := matrix[r][c]
+        switch {
+        case v == target:
+            return true
+        case v > target:
+            c-- // весь столбец ниже ещё больше
+        default:
+            r++ // вся строка левее ещё меньше
+        }
+    }
+    return false
+}`,
+"BFS по сетке":`// LC 994. Rotting Oranges (multi-source BFS)
+func orangesRotting(grid [][]int) int {
+    m, n := len(grid), len(grid[0])
+    queue := [][2]int{}
+    fresh := 0
+    for i := 0; i < m; i++ {
+        for j := 0; j < n; j++ {
+            switch grid[i][j] {
+            case 2:
+                queue = append(queue, [2]int{i, j})
+            case 1:
+                fresh++
+            }
+        }
+    }
+    dirs := [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
+    minutes := 0
+    for len(queue) > 0 && fresh > 0 {
+        for size := len(queue); size > 0; size-- {
+            cell := queue[0]
+            queue = queue[1:]
+            for _, d := range dirs {
+                r, c := cell[0]+d[0], cell[1]+d[1]
+                if r >= 0 && r < m && c >= 0 && c < n && grid[r][c] == 1 {
+                    grid[r][c] = 2 // помечаем при добавлении
+                    fresh--
+                    queue = append(queue, [2]int{r, c})
+                }
+            }
+        }
+        minutes++
+    }
+    if fresh > 0 {
+        return -1
+    }
+    return minutes
+}`,
+"DFS по сетке":`// LC 200. Number of Islands
+func numIslands(grid [][]byte) int {
+    m, n := len(grid), len(grid[0])
+    var dfs func(r, c int)
+    dfs = func(r, c int) {
+        if r < 0 || r >= m || c < 0 || c >= n || grid[r][c] != '1' {
+            return // граница проверяется до обращения
+        }
+        grid[r][c] = '0' // посещено
+        dfs(r+1, c)
+        dfs(r-1, c)
+        dfs(r, c+1)
+        dfs(r, c-1)
+    }
+    count := 0
+    for i := 0; i < m; i++ {
+        for j := 0; j < n; j++ {
+            if grid[i][j] == '1' {
+                count++
+                dfs(i, j)
+            }
+        }
+    }
+    return count
+}`,
+"Быстрый и медленный указатели":`// LC 141. Linked List Cycle
+func hasCycle(head *ListNode) bool {
+    slow, fast := head, head
+    for fast != nil && fast.Next != nil {
+        slow = slow.Next
+        fast = fast.Next.Next
+        if slow == fast {
+            return true
+        }
+    }
+    return false
+}
+
+// LC 876. Middle of the Linked List
+func middleNode(head *ListNode) *ListNode {
+    slow, fast := head, head
+    for fast != nil && fast.Next != nil {
+        slow = slow.Next
+        fast = fast.Next.Next
+    }
+    return slow
+}`,
+"Разворот: prev / cur / next":`// LC 206. Reverse Linked List
+func reverseList(head *ListNode) *ListNode {
+    var prev *ListNode
+    cur := head
+    for cur != nil {
+        next := cur.Next // запомнить
+        cur.Next = prev  // перевесить
+        prev, cur = cur, next
+    }
+    return prev // новая голова
+}`,
+"Backtracking":`// LC 78. Subsets
+func subsets(nums []int) [][]int {
+    var res [][]int
+    var path []int
+    var bt func(start int)
+    bt = func(start int) {
+        res = append(res, append([]int(nil), path...)) // копия пути!
+        for i := start; i < len(nums); i++ {
+            path = append(path, nums[i]) // выбрать
+            bt(i + 1)                    // спуститься
+            path = path[:len(path)-1]    // отменить выбор
+        }
+    }
+    bt(0)
+    return res
+}`,
+"Динамическое программирование":`// LC 322. Coin Change
+func coinChange(coins []int, amount int) int {
+    dp := make([]int, amount+1) // dp[x] — минимум монет для суммы x
+    for x := 1; x <= amount; x++ {
+        dp[x] = amount + 1 // «бесконечность»
+        for _, c := range coins {
+            if c <= x && dp[x-c]+1 < dp[x] {
+                dp[x] = dp[x-c] + 1
+            }
+        }
+    }
+    if dp[amount] > amount {
+        return -1
+    }
+    return dp[amount]
+}
+
+// LC 198. House Robber — память O(1)
+func rob(nums []int) int {
+    prev, cur := 0, 0
+    for _, x := range nums {
+        prev, cur = cur, max(cur, prev+x)
+    }
+    return cur
+}`,
+"Префиксные суммы + хеш":`// LC 560. Subarray Sum Equals K
+func subarraySum(nums []int, k int) int {
+    count := map[int]int{0: 1} // пустой префикс
+    sum, res := 0, 0
+    for _, x := range nums {
+        sum += x
+        res += count[sum-k] // столько отрезков с суммой k кончаются здесь
+        count[sum]++
+    }
+    return res
+}`,
+"Скользящее окно":`// LC 3. Longest Substring Without Repeating Characters
+func lengthOfLongestSubstring(s string) int {
+    last := make(map[byte]int) // символ -> последний индекс
+    best, left := 0, 0
+    for right := 0; right < len(s); right++ {
+        if i, ok := last[s[right]]; ok && i >= left {
+            left = i + 1 // сжать окно за повтор
+        }
+        last[s[right]] = right
+        best = max(best, right-left+1)
+    }
+    return best
+}
+
+// LC 209. Minimum Size Subarray Sum
+func minSubArrayLen(target int, nums []int) int {
+    best, sum, left := math.MaxInt, 0, 0
+    for right, x := range nums {
+        sum += x
+        for sum >= target { // окно валидно — сжимаем
+            best = min(best, right-left+1)
+            sum -= nums[left]
+            left++
+        }
+    }
+    if best == math.MaxInt {
+        return 0
+    }
+    return best
+}`,
+"Бинарный поиск":`// LC 704. Binary Search
+func search(nums []int, target int) int {
+    lo, hi := 0, len(nums)-1
+    for lo <= hi {
+        mid := lo + (hi-lo)/2
+        switch {
+        case nums[mid] == target:
+            return mid
+        case nums[mid] < target:
+            lo = mid + 1
+        default:
+            hi = mid - 1
+        }
+    }
+    return -1
+}
+
+// Первая позиция, где nums[i] >= target (LC 35, 34)
+func lowerBound(nums []int, target int) int {
+    lo, hi := 0, len(nums)
+    for lo < hi {
+        mid := lo + (hi-lo)/2
+        if nums[mid] < target {
+            lo = mid + 1
+        } else {
+            hi = mid
+        }
+    }
+    return lo
+}`,
+"Два указателя навстречу":`// LC 167. Two Sum II (массив отсортирован, индексы с 1)
+func twoSum(numbers []int, target int) []int {
+    left, right := 0, len(numbers)-1
+    for left < right {
+        sum := numbers[left] + numbers[right]
+        switch {
+        case sum == target:
+            return []int{left + 1, right + 1}
+        case sum < target:
+            left++ // нужна сумма больше
+        default:
+            right-- // нужна сумма меньше
+        }
+    }
+    return nil
+}`,
+"Min-heap размера k":`// LC 215. Kth Largest Element in an Array
+type IntHeap []int
+
+func (h IntHeap) Len() int           { return len(h) }
+func (h IntHeap) Less(i, j int) bool { return h[i] < h[j] } // min-heap
+func (h IntHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *IntHeap) Push(x any)        { *h = append(*h, x.(int)) }
+func (h *IntHeap) Pop() any {
+    old := *h
+    x := old[len(old)-1]
+    *h = old[:len(old)-1]
+    return x
+}
+
+func findKthLargest(nums []int, k int) int {
+    h := &IntHeap{}
+    for _, x := range nums {
+        heap.Push(h, x)
+        if h.Len() > k {
+            heap.Pop(h) // выкидываем меньший — остаются k наибольших
+        }
+    }
+    return (*h)[0]
+}`,
+"Сортировка + проход":`// LC 56. Merge Intervals
+func merge(intervals [][]int) [][]int {
+    sort.Slice(intervals, func(i, j int) bool {
+        return intervals[i][0] < intervals[j][0]
+    })
+    res := [][]int{intervals[0]}
+    for _, in := range intervals[1:] {
+        last := res[len(res)-1]
+        if in[0] <= last[1] { // пересекаются — расширяем последний
+            last[1] = max(last[1], in[1])
+        } else {
+            res = append(res, in)
+        }
+    }
+    return res
+}`,
+"Монотонный стек":`// LC 739. Daily Temperatures
+func dailyTemperatures(t []int) []int {
+    res := make([]int, len(t))
+    stack := []int{} // индексы; температуры в стеке убывают
+    for i, x := range t {
+        for len(stack) > 0 && t[stack[len(stack)-1]] < x {
+            j := stack[len(stack)-1]
+            stack = stack[:len(stack)-1]
+            res[j] = i - j
+        }
+        stack = append(stack, i)
+    }
+    return res
+}
+
+// LC 20. Valid Parentheses
+func isValid(s string) bool {
+    pair := map[byte]byte{')': '(', ']': '[', '}': '{'}
+    stack := []byte{}
+    for i := 0; i < len(s); i++ {
+        if open, ok := pair[s[i]]; ok {
+            if len(stack) == 0 || stack[len(stack)-1] != open {
+                return false
+            }
+            stack = stack[:len(stack)-1]
+        } else {
+            stack = append(stack, s[i])
+        }
+    }
+    return len(stack) == 0
+}`,
+"Префиксные суммы":`// LC 303. Range Sum Query - Immutable
+type NumArray struct{ pref []int }
+
+func Constructor(nums []int) NumArray {
+    pref := make([]int, len(nums)+1) // pref[0] = 0
+    for i, x := range nums {
+        pref[i+1] = pref[i] + x
+    }
+    return NumArray{pref}
+}
+
+func (a *NumArray) SumRange(left, right int) int {
+    return a.pref[right+1] - a.pref[left]
+}`,
+"Линейный проход / сортировка":`// LC 121. Best Time to Buy and Sell Stock — один проход
+func maxProfit(prices []int) int {
+    minPrice, best := math.MaxInt, 0
+    for _, p := range prices {
+        minPrice = min(minPrice, p)
+        best = max(best, p-minPrice)
+    }
+    return best
+}
+
+// LC 53. Maximum Subarray (алгоритм Кадане)
+func maxSubArray(nums []int) int {
+    cur, best := nums[0], nums[0]
+    for _, x := range nums[1:] {
+        cur = max(x, cur+x)
+        best = max(best, cur)
+    }
+    return best
+}`
+};
+var V1="https://youtu.be/SknJzSY34j4",V2="https://youtu.be/QSfzdf3Dwb0",V3="https://youtu.be/oGMB4jDJGro",V4="https://youtu.be/mB13FSDzcGo";
+
+// если(условие, да, нет) / лист-алгоритм
+function IF(q,yes,no){return {q:q,y:yes,n:no}}
+function L(name,w,i,c,lc,t,code,v){return {name:name,w:w,i:i,c:c,lc:lc,t:t,code:code,v:v}}
+
+var ROOT=
+IF("Go-задача: горутины, общий ресурс, нагрузка?",
+  IF("Зависим от медленного внешнего сервиса?",
+    L("Фоновое обновление кэша (Ticker)","Внешний сервис отвечает долго, читают часто.","Кэш обновляется в фоне раз в интервал; читатели берут RLock; внешний вызов идёт вне блокировки, под Lock только запись результата.","чтение O(1)","погода (Авито)","Кэш с TTL вызывает cache stampede: все запросы разом идут во внешний сервис. Заполнить кэш сразу при старте; ticker.Stop().","bg",[V4,"видео 4"]),
+    IF("Много независимых задач параллельно?",
+      L("Worker pool / семафор + WaitGroup","Fan-out запросов (по городам, по ключам), нужен лимит.","Буферизованный канал как семафор плюс WaitGroup, или errgroup.SetLimit.","параллельность ≤ лимита","fan-out","Главная ошибка видео 4: range по map без блокировки, когда горутины пишут в неё (fatal error). Сначала скопировать ключи под RLock. wg.Add до go.","pool",[V4,"видео 4"]),
+      IF("Нужны отмена или таймауты?",
+        L("context.Context","Graceful shutdown, таймауты на внешние вызовы.","select по ctx.Done() и рабочему каналу; http.NewRequestWithContext.","—","shutdown","Не забыть cancel() и ticker.Stop().",null,[V4,"видео 4"]),
+        IF("Одна блокировка — узкое место?",
+          L("Шардирование","Миллион ключей, много записей и чтений одновременно.","N шардов со своей map и мьютексом; номер шарда = hash(key) % N (FNV-32a). Конкуренция падает в N раз.","конкуренция ÷ N","in-memory cache","Изменение N требует ребаланса, ответ — consistent hashing. []*Shard вместо []Shard, uint32 вместо int.","shard",[V2,"видео 2"]),
+          L("sync.RWMutex","Общая map; чтений намного больше записей.","RLock для чтения (читатели не мешают друг другу), Lock для записи.","чтения параллельно","in-memory cache","map без make даёт panic; Unlock через defer, но defer в цикле приводит к deadlock.","rw",[V2,"видео 2"]))))),
+IF("Вход — граф или дерево?",
+  IF("Нужен кратчайший путь?",
+    IF("У рёбер есть веса?",
+      L("Дейкстра","Кратчайший путь, веса ≥ 0.","Min-heap по расстоянию, релаксация рёбер.","O(E log V)","743 · 1514 · 787","При отрицательных весах нужен Беллман-Форд."),
+      L("BFS","Кратчайший путь без весов, распространение по слоям.","Очередь; номер слоя равен расстоянию. Несколько стартов — multi-source BFS.","O(V+E)","127 · 994 · 1091","visited ставить при добавлении в очередь.")),
+    IF("Есть зависимости или порядок выполнения?",
+      L("Топологическая сортировка","Курсы с пререквизитами, порядок сборки, цикл в ориентированном графе.","Kahn: очередь вершин с входящей степенью 0. Если обработаны не все вершины, есть цикл.","O(V+E)","207 · 210 · 269","Направление рёбер: от пререквизита к курсу."),
+      IF("Объединяем компоненты связности?",
+        L("Union-Find (DSU)","Компоненты связности, лишнее ребро, динамическое объединение.","find со сжатием путей, union по рангу.","≈O(α(n))","547 · 684 · 323 · 721","Без сжатия путей деградирует до O(n)."),
+        IF("Нужен обход по уровням?",
+          L("BFS по уровням","Значения по уровням, правый вид дерева, зигзаг.","Очередь; размер уровня фиксируем перед внутренним циклом.","O(n)","102 · 199 · 103","len(queue) брать до цикла уровня."),
+          L("DFS","Высота, диаметр, LCA, проверка BST, все пути.","Рекурсия: функция возвращает значение поддерева, родитель комбинирует.","O(n)","104 · 543 · 236 · 98","98: передавать границы min и max, а не сравнивать только с детьми."))))),
+IF("Вход — матрица или сетка?",
+  IF("Ищем значение в отсортированной матрице?",
+    IF("Отсортирована сплошь (строка за строкой)?",
+      L("Бинарный поиск по матрице","Первый элемент строки больше последнего в предыдущей.","Матрица как один массив: mid → matrix[mid/cols][mid%cols].","O(log(m·n))","74","Ошибки кандидата Ozon: делил на число строк вместо столбцов, < вместо <=, двигал не ту границу.","mat",[V3,"видео 3, мок Ozon"]),
+      L("Обход из угла","Строки и столбцы отсортированы по отдельности.","Старт с правого верхнего угла: больше цели → влево, меньше → вниз.","O(m+n)","240","Бинпоиск по каждой строке даёт O(m log n), хуже.")),
+    IF("Нужен кратчайший путь по клеткам?",
+      L("BFS по сетке","Минимум шагов, гниение апельсинов, расстояние до ближайшего.","Очередь клеток, соседи в 4 направлениях; несколько стартов — multi-source.","O(m·n)","994 · 1091 · 542","DFS не даёт кратчайший путь."),
+      L("DFS по сетке","Острова, площадь области, заливка.","Рекурсивно обходим соседей и помечаем посещённые.","O(m·n)","200 · 695 · 130","Проверка границ до обращения к клетке."))),
+IF("Вход — связный список?",
+  IF("Нужно слить списки?",
+    IF("Списков больше двух?",
+      L("Куча: слияние k списков","Слить k отсортированных списков.","В min-heap по одной голове от каждого списка; достали минимум → кладём его next.","O(N log k)","23","priority_queue<Node*> без компаратора сравнивает адреса; класть node.next, а не head.next.","mk",[V3,"видео 3, мок Ozon"]),
+      L("Dummy-голова + tail","Слить два отсортированных списка.","Фиктивный узел и указатель на хвост; в конце присоединить остаток целиком.","O(n+m), память O(1)","21","Ошибка кандидата Ozon: while (left == nullptr || right == nullptr) — условие инвертировано; голова терялась.","ml",[V3,"видео 3, мок Ozon"])),
+    IF("Нужно найти цикл или середину?",
+      L("Быстрый и медленный указатели","Цикл в списке, середина, N-й с конца.","fast шагает на 2, slow на 1. Встретились — цикл есть.","O(n), память O(1)","141 · 142 · 876 · 19","Условие fast != nil && fast.Next != nil."),
+      L("Разворот: prev / cur / next","Развернуть список или его часть.","Запомнить next, перевесить cur.Next = prev, сдвинуться.","O(n), память O(1)","206 · 92 · 25","Возвращать prev, а не head."))),
+IF("Нужно перебрать все варианты?",
+  L("Backtracking","Перестановки, подмножества, комбинации, N ферзей.","Выбрать, рекурсивно спуститься, отменить выбор. Отсекать ветви как можно раньше.","O(2ⁿ) / O(n!)","46 · 78 · 39 · 79 · 51","В Go копировать путь при сохранении ответа: append к общему слайсу портит уже сохранённые ответы."),
+IF("Ищем оптимум или число способов?",
+  L("Динамическое программирование","Лестница, грабитель, монеты, LIS, LCS.","Состояние → переход → база. Сначала рекурсия с мемоизацией, потом таблица.","O(n)…O(n·m)","70 · 198 · 322 · 300 · 1143","Сначала проговорить рекуррентную формулу, потом писать код."),
+IF("Ищем подотрезок или подстроку с условием?",
+  IF("Есть отрицательные или «сумма = k»?",
+    L("Префиксные суммы + хеш","Число подмассивов с суммой k.","sum[i..j] = pref[j] − pref[i−1]; в map храним, сколько раз встречалась каждая префиксная сумма.","O(n)","560 · 523 · 974","Инициализировать map[0] = 1."),
+    L("Скользящее окно","Самая длинная или короткая подстрока, сумма ≤ k, без повторов.","Расширяем right; пока окно невалидно — сдвигаем left; обновляем ответ.","O(n)","3 · 209 · 424 · 76","Где обновлять ответ (до или после сжатия) зависит от того, ищем минимум или максимум.")),
+IF("Данные отсортированы?",
+  IF("Ищем элемент или границу?",
+    L("Бинарный поиск","Найти элемент, первую или последнюю позицию; повёрнутый массив; поиск по ответу при монотонной check(x).","Каждый шаг отбрасывает половину. mid = lo + (hi−lo)/2.","O(log n)","704 · 35 · 34 · 33 · 875","lo <= hi, сдвиг от mid на ±1; проверять 1 и 2 элемента, target на краях и вне диапазона."),
+    IF("Нужно слить два массива?",
+      L("Два указателя: слияние с конца","Слить в nums1 in place.","Идём с конца, больший элемент кладём в хвост; остаток nums2 дописываем.","O(m+n), память O(1)","88 · 977","Основной цикл заканчивается вместе с меньшим массивом, остаток надо дописать.","merge",[V1,"видео 1, LC 88"]),
+      L("Два указателя навстречу","Пара или тройка с суммой, контейнер с водой.","left с начала, right с конца; сумма больше → right--, меньше → left++.","O(n), память O(1)","167 · 15 · 11","3Sum: внешний цикл плюс два указателя, пропускать дубликаты."))),
+IF("Нужны top-k или k-й по величине?",
+  IF("Отбор по частоте?",
+    L("Bucket sort по частоте","Top-k самых частых элементов.","freq в map; индекс корзины равен частоте; обход корзин с конца, пока не наберём k.","O(n)","347 · 451","Корзин len(nums)+1; тип [][]int; при range по map не путать ключ и значение.","topk",[V1,"видео 1, LC 347"]),
+    L("Min-heap размера k","k-й наибольший, k ближайших точек.","Держим k лучших, вершина кучи — порог. Альтернатива: Quick Select в среднем за O(n).","O(n log k)","215 · 703 · 973","Для «k наибольших» нужна min-heap, не max.")),
+IF("Пара с суммой, «видел ли раньше», частоты?",
+  L("Хеш-таблица","Two Sum с индексами, дубликаты, анаграммы, группировка.","Для каждого x ищем target−x среди уже увиденных; всё за один проход.","O(n), память O(n)","1 · 49 · 217 · 242 · 128","Класть в map ПОСЛЕ проверки, иначе [3,3] найдёт сам себя. Баг из видео: искали num вместо diff.","two",[V1,"видео 1, LC 1"]),
+IF("Интервалы (объединить, пересечь)?",
+  L("Сортировка + проход","Слить интервалы, минимум переговорных.","Сортировка по началу; сливаем, пока start ≤ end последнего. Для комнат — куча по концам.","O(n log n)","56 · 57 · 435 · 253","Касание [1,2] и [2,3] считать пересечением? Уточнить."),
+IF("Скобки или «ближайший больший / меньший»?",
+  L("Монотонный стек","Валидные скобки, дни до потепления, гистограмма.","Стек поддерживает монотонность; при нарушении снимаем элементы и считаем для них ответ.","O(n)","20 · 739 · 496 · 84","Хранить в стеке индексы, а не значения."),
+IF("Палиндром или разворот строки?",
+  L("Два указателя: палиндром","Проверить палиндром, игнорируя регистр и знаки.","left и right идут навстречу, лишние символы пропускаются через continue.","O(n)","125 · 680 · 344","strings.ToLower копирует строку (O(n) памяти); байты верны только для ASCII.","pal",[V1,"видео 1, LC 125"]),
+IF("Много запросов суммы на отрезке?",
+  L("Префиксные суммы","Сумма [l..r] много раз, произведение кроме себя.","pref[i+1] = pref[i] + a[i]; сумма = pref[r+1] − pref[l].","O(n) + O(1) на запрос","303 · 238 · 724","Сдвиг индексов на 1 убирает частные случаи."),
+  L("Линейный проход / сортировка","Ничего из выше не подошло: часто хватает одного прохода или сортировки.","Посчитать за один проход с несколькими переменными или отсортировать и пройти.","O(n) / O(n log n)","121 · 53 · 169","Не усложнять: сначала назвать простое решение и его сложность.")))))))))))))));
+
+// ---------- подсветка ----------
+var KW="break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var".split(" ");
+var TY="int int32 int64 uint32 byte rune string bool any error".split(" ");
+var LIT="nil true false iota".split(" ");
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+var re=/(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\b\d+\b)|([A-Za-z_][A-Za-z0-9_]*)(?=\s*\()|([A-Za-z_][A-Za-z0-9_]*)/g;
+function hl(src){var out="",last=0,m;re.lastIndex=0;
+  while((m=re.exec(src))){out+=esc(src.slice(last,m.index));var t=m[0],cls="";
+    if(m[1])cls=/\[правка\]/.test(t)?"tc tfix":"tc";else if(m[2])cls="ts";else if(m[3])cls="tn";
+    else{var w=m[4]||m[5];if(KW.indexOf(w)>=0)cls="tk";else if(TY.indexOf(w)>=0)cls="tt";else if(LIT.indexOf(w)>=0)cls="tn";else if(m[4])cls="tf";}
+    out+=cls?'<span class="'+cls+'">'+esc(t)+"</span>":esc(t);last=re.lastIndex;}
+  return out+esc(src.slice(last));}
+
+
+
+// ---------- раскладка: «да» вправо, «нет» вниз ----------
+var COLW=250,BOXW=214,ROWH=58,BOXH=44;
+var nodes=[],edges=[];
+function place(n,col,row,parent,kind){
+  n.col=col;n.row=row;n.parent=parent;n.kind=kind;n.idx=nodes.length;nodes.push(n);
+  if(!n.q)return 1;
+  var h1=place(n.y,col+1,row,n,"y");
+  var h2=place(n.n,col,row+h1,n,"n");
+  edges.push({a:n,b:n.y,k:"y"},{a:n,b:n.n,k:"n"});
+  return h1+h2;
+}
+var rows=place(ROOT,0,0,null,null);
+var maxCol=0;nodes.forEach(function(n){if(n.col>maxCol)maxCol=n.col});
+var W=(maxCol)*COLW+BOXW,H=rows*ROWH;
+var canvas=document.getElementById("canvas"),svg=document.getElementById("edges");
+canvas.style.width=W+"px";canvas.style.height=H+"px";
+svg.setAttribute("width",W);svg.setAttribute("height",H);
+function X(n){return n.col*COLW}function Y(n){return n.row*ROWH}
+function esc2(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+nodes.forEach(function(n){
+  var d=document.createElement("div");d.className="nd "+(n.q?"q":"l");
+  d.style.left=X(n)+"px";d.style.top=Y(n)+"px";d.style.width=BOXW+"px";d.style.height=BOXH+"px";
+  d.textContent=n.q||n.name;d.title=n.q||n.name;
+  d.onclick=function(){select(n.idx)};
+  n.el=d;canvas.appendChild(d);
+});
+var NS="http://www.w3.org/2000/svg",svgh="";
+edges.forEach(function(e,i){
+  var a=e.a,b=e.b,dpath,tx,ty;
+  if(e.k==="y"){var x1=X(a)+BOXW,y1=Y(a)+BOXH/2,x2=X(b),y2=Y(b)+BOXH/2;dpath="M"+x1+" "+y1+"H"+x2;tx=x1+8;ty=y1-6;}
+  else{var x1=X(a)+22,y1=Y(a)+BOXH,y2=Y(b);dpath="M"+x1+" "+y1+"V"+y2;tx=x1+6;ty=y1+14;}
+  e.id="e"+i;
+  svgh+="<path id='e"+i+"' d='"+dpath+"'/><text class='"+e.k+"' x='"+tx+"' y='"+ty+"'>"+(e.k==="y"?"да":"нет")+"</text>";
+});
+svg.innerHTML=svgh;
+// стрелки на концах — маленькие треугольники через marker не обязательны; добавим точку
+edges.forEach(function(e){e.el=document.getElementById(e.id)});
+
+// ---------- панель ----------
+var panel=document.getElementById("panel"),cur=null;
+function leavesOf(n,acc){if(!n.q){acc.push(n);return acc}leavesOf(n.y,acc);leavesOf(n.n,acc);return acc}
+function select(i){
+  var n=nodes[i];cur=n;
+  nodes.forEach(function(m){m.el.classList.remove("on","sel")});
+  edges.forEach(function(e){e.el.classList.remove("on")});
+  var m=n;while(m){m.el.classList.add("on");if(m.parent){edges.forEach(function(e){if(e.b===m)e.el.classList.add("on")})}m=m.parent}
+  if(!n.q)n.el.classList.add("sel");
+  var h,src=n.q?null:((n.code&&C[n.code])||EX[n.name]);
+  if(n.q){
+    h="<div class='kick'>Условие</div><h2>if "+esc2(n.q)+"</h2>"+
+      "<div class='br'><b class='y'>да →</b><span>"+leavesOf(n.y,[]).map(function(l){return "<a data-i='"+l.idx+"'>"+esc2(l.name)+"</a>"}).join(", ")+"</span>"+
+      "<b class='n'>нет ↓</b><span>"+leavesOf(n.n,[]).map(function(l){return "<a data-i='"+l.idx+"'>"+esc2(l.name)+"</a>"}).join(", ")+"</span></div>"+
+      "<p class='hint' style='margin-top:14px'>Нажми на зелёный лист в дереве или на алгоритм выше, чтобы открыть описание.</p>";
+  } else {
+    h="<div class='kick'>Алгоритм</div><h2>"+esc2(n.name)+"</h2>"+
+      
+      "<span class='cplx'>"+esc2(n.c)+"</span><span class='pill'>LeetCode: "+esc2(n.lc)+"</span>"+
+      "<div class='sec'><h3>Когда выбирать</h3><div class='when'>"+esc2(n.w)+"</div></div>"+
+      "<div class='sec'><h3>Идея</h3><p>"+esc2(n.i)+"</p></div>"+
+      "<div class='sec'><h3>Ловушка</h3><div class='trap'>"+esc2(n.t)+"</div></div>"+
+      (src?"<div class='sec'><h3>Пример решения (Go)</h3><pre class='code'><code>"+hl(src)+"</code></pre></div>":"")+
+      (n.v?"<div class='sec src'>Источник: <a href='"+n.v[0]+"' target='_blank' rel='noopener'>"+esc2(n.v[1])+"</a></div>":"");
+  }
+  panel.innerHTML=h;panel.scrollTop=0;
+  panel.querySelectorAll("a[data-i]").forEach(function(a){a.onclick=function(){var t=nodes[+a.dataset.i];select(t.idx);t.el.scrollIntoView({block:"center",inline:"center",behavior:"smooth"})}});
+  history.replaceState(null,"","#"+i);
+}
+document.getElementById("theme").onclick=function(){
+  var r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme=dark?"light":"dark";try{localStorage.setItem("algoTreeTheme",r.dataset.theme)}catch(e){}
+};
+try{var th=localStorage.getItem("algoTreeTheme");if(th)document.documentElement.dataset.theme=th}catch(e){}
+var h0=parseInt(location.hash.slice(1),10);select(nodes[h0]?h0:0);
+})();
+</script>
+</body>
+</html>
